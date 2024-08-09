@@ -17,6 +17,10 @@ class IPostsService(ABC):
         pass
     
     @abstractmethod
+    async def read_all(self):
+        pass
+    
+    @abstractmethod
     async def read(self, id):
         pass
 
@@ -44,6 +48,27 @@ class PostsService(IPostsService):
         await self.posts_repository.create(domain_post)
         
         return dtos.CreatePostResponseDto(id=new_post_id)
+    
+    async def read_all(self) -> dtos.GetPostsResponseDto:
+        domain_posts = await self.posts_repository.read_all()
+        return_dtos: list[dtos.GetPostResponseDto] = []
+        
+        for entry in domain_posts:
+            return_dtos.append(dtos.GetPostResponseDto(
+            id=entry.id,
+            author=entry.author,
+            title=entry.title,
+            description=entry.description,
+            votes=entry.votes,
+            created_at=str(entry.created_at),
+            created_by=entry.created_by,
+            updated_at=str(entry.updated_at),
+            updated_by=entry.updated_by
+        ))
+        
+        return dtos.GetPostsResponseDto(
+            posts=return_dtos
+        )
     
     async def read(self, id: str) -> dtos.GetPostResponseDto:
         domain_post = await self.posts_repository.read(id)

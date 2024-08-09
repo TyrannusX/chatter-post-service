@@ -43,6 +43,10 @@ class ICrudRepository(ABC):
         pass
     
     @abstractmethod
+    async def read_all(self, db):
+        pass
+    
+    @abstractmethod
     async def read(self, id, db):
         pass
     
@@ -75,6 +79,25 @@ class PostsRepository(ICrudRepository):
         
         self.db.add(db_post)
         self.db.commit()
+        
+    async def read_all(self) -> list[domain.Post]:
+        db_posts = self.db.query(PersistedPost)
+        domain_posts: list[domain.Post] = []
+        
+        for entry in db_posts:
+            domain_posts.append(domain.Post(
+            id=entry.id,
+            author=entry.author,
+            title=entry.title,
+            description=entry.description,
+            votes=entry.votes,
+            created_at=entry.created_at,
+            created_by=entry.created_by,
+            updated_at=entry.updated_at,
+            updated_by=entry.updated_by
+        ))
+        
+        return domain_posts
     
     async def read(self, id) -> domain.Post:
         db_post = self.db.query(PersistedPost).filter(PersistedPost.id == id).first()

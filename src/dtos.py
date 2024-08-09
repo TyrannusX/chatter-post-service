@@ -18,3 +18,6 @@ class GetPostResponseDto(BaseModel):
     created_by: str
     updated_at: str
     updated_by: str
+
+class GetPostsResponseDto(BaseModel):
+    posts: list[GetPostResponseDto]
