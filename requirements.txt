@@ -2,3 +2,4 @@ fastapi
 SQLAlchemy
 python-jose
 httpx
+pytest

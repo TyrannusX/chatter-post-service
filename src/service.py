@@ -26,11 +26,14 @@ class IPostsService(ABC):
 
 
 class PostsService(IPostsService):
-    def __init__(self) -> None:
+    def __init__(self, posts_repository: infrastructure.ICrudRepository) -> None:
         super().__init__()
-        self.posts_repository = get_posts_repository()
+        self.posts_repository = posts_repository
         
     async def create(self, dto: dtos.CreatePostRequestDto, current_user: str) -> dtos.CreatePostResponseDto:
+        assert dto is not None
+        assert current_user is not None and not current_user.isspace()
+        
         new_post_id = str(uuid4())
         
         domain_post = domain.Post(
@@ -71,6 +74,8 @@ class PostsService(IPostsService):
         )
     
     async def read(self, id: str) -> dtos.GetPostResponseDto:
+        assert id is not None and not id.isspace()
+        
         domain_post = await self.posts_repository.read(id)
         
         return dtos.GetPostResponseDto(

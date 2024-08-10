@@ -18,9 +18,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base class for SQL Alchemy models
 Base = declarative_base()
 
-def get_db_instance():
-    return SessionLocal()
-
 
 # ORM Models
 class PersistedPost(Base):
@@ -39,32 +36,34 @@ class PersistedPost(Base):
 # Repos
 class ICrudRepository(ABC):
     @abstractmethod
-    async def create(self, model, db):
+    async def create(self, model):
         pass
     
     @abstractmethod
-    async def read_all(self, db):
+    async def read_all(self):
         pass
     
     @abstractmethod
-    async def read(self, id, db):
+    async def read(self, id):
         pass
     
     @abstractmethod
-    async def update(self, model, db):
+    async def update(self, model):
         pass
     
     @abstractmethod
-    async def delete(self, id, db):
+    async def delete(self, id):
         pass
 
 
 class PostsRepository(ICrudRepository):
-    def __init__(self) -> None:
+    def __init__(self, db) -> None:
         super().__init__()
-        self.db = get_db_instance()
+        self.db = db
         
     async def create(self, model) -> None:
+        assert model is not None
+        
         db_post = PersistedPost(
             id=model.id,
             author=model.author,
@@ -99,7 +98,9 @@ class PostsRepository(ICrudRepository):
         
         return domain_posts
     
-    async def read(self, id) -> domain.Post:
+    async def read(self, id: str) -> domain.Post:
+        assert id is not None and not id.isspace()
+        
         db_post = self.db.query(PersistedPost).filter(PersistedPost.id == id).first()
         
         domain_post = domain.Post(
