@@ -2,14 +2,12 @@ from abc import ABC, abstractmethod
 from dotenv import load_dotenv
 import domain
 import dtos
-import infrastructure
 from uuid import uuid4
 from datetime import datetime, timezone
+import logging
+import unit_of_work
 
 load_dotenv()
-
-def get_posts_repository():
-    return infrastructure.PostsRepository()
 
 class IPostsService(ABC):
     @abstractmethod
@@ -26,9 +24,9 @@ class IPostsService(ABC):
 
 
 class PostsService(IPostsService):
-    def __init__(self, posts_repository: infrastructure.ICrudRepository) -> None:
+    def __init__(self, uow: unit_of_work.UnitOfWork) -> None:
         super().__init__()
-        self.posts_repository = posts_repository
+        self.uow = uow
         
     async def create(self, dto: dtos.CreatePostRequestDto, current_user: str) -> dtos.CreatePostResponseDto:
         assert dto is not None
@@ -48,12 +46,16 @@ class PostsService(IPostsService):
             updated_by=current_user
         )
 
-        await self.posts_repository.create(domain_post)
-        
+        with self.uow:    
+            await self.uow.posts.create(domain_post)
+            self.uow.commit()
+
         return dtos.CreatePostResponseDto(id=new_post_id)
     
     async def read_all(self) -> dtos.GetPostsResponseDto:
-        domain_posts = await self.posts_repository.read_all()
+        with self.uow:
+            domain_posts = await self.uow.posts.read_all()
+            
         return_dtos: list[dtos.GetPostResponseDto] = []
         
         for entry in domain_posts:
@@ -76,7 +78,8 @@ class PostsService(IPostsService):
     async def read(self, id: str) -> dtos.GetPostResponseDto:
         assert id is not None and not id.isspace()
         
-        domain_post = await self.posts_repository.read(id)
+        with self.uow:
+            domain_post = await self.uow.posts.read(id)
         
         return dtos.GetPostResponseDto(
             id=domain_post.id,

@@ -57,9 +57,9 @@ class ICrudRepository(ABC):
 
 
 class PostsRepository(ICrudRepository):
-    def __init__(self, db) -> None:
+    def __init__(self, session: Session) -> None:
         super().__init__()
-        self.db = db
+        self.session = session
         
     async def create(self, model) -> None:
         assert model is not None
@@ -76,11 +76,10 @@ class PostsRepository(ICrudRepository):
             updated_by=model.updated_by,
         )
         
-        self.db.add(db_post)
-        self.db.commit()
+        self.session.add(db_post)
         
     async def read_all(self) -> list[domain.Post]:
-        db_posts = self.db.query(PersistedPost)
+        db_posts = self.session.query(PersistedPost)
         domain_posts: list[domain.Post] = []
         
         for entry in db_posts:
@@ -101,7 +100,7 @@ class PostsRepository(ICrudRepository):
     async def read(self, id: str) -> domain.Post:
         assert id is not None and not id.isspace()
         
-        db_post = self.db.query(PersistedPost).filter(PersistedPost.id == id).first()
+        db_post = self.session.query(PersistedPost).filter(PersistedPost.id == id).first()
         
         domain_post = domain.Post(
             id=db_post.id,

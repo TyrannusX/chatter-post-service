@@ -5,8 +5,8 @@ from infrastructure import Base, engine
 from dotenv import load_dotenv
 import dtos
 import service
-import infrastructure
 import security
+import unit_of_work
 
 load_dotenv()
 
@@ -22,10 +22,7 @@ app.add_middleware(
 )
     
 def get_post_service() -> service.IPostsService:
-    return service.PostsService(
-        posts_repository=infrastructure.PostsRepository(
-            db=infrastructure.SessionLocal()
-        ))
+    return service.PostsService(unit_of_work.SqlAlchemyUnitOfWork())
 
 @app.post("/posts/", response_model=dtos.CreatePostResponseDto)
 async def create_post(create_post: dtos.CreatePostRequestDto, posts_service: Annotated[service.IPostsService, Depends(get_post_service)], current_user: str = Security(security.verify_jwt, scopes=["create-post"])):

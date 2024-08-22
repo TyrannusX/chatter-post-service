@@ -1,10 +1,7 @@
 import datetime
 import unittest.mock
-import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import unittest
-
-import sqlalchemy.orm
 import infrastructure
 import unittest.async_case
 import domain
